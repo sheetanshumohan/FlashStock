@@ -1,0 +1,75 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build: .
+    command: ["node", "src/server.js"]
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      REDIS_URL: redis://redis:6379
+      MONGO_COMMAND_MONITORING: false
+    ports:
+      - "127.0.0.1:5000:5000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+
+  outbox:
+    build: .
+    command: ["node", "src/workers/outbox-dispatcher.js"]
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+
+  reservation-worker:
+    build: .
+    command: ["node", "src/workers/reservation-expiry.worker.js"]
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+
+  order-worker:
+    build: .
+    command: ["node", "src/workers/order-processing.worker.js"]
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+
+volumes:
+  redis_data:

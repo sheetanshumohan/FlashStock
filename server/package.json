@@ -1,0 +1,33 @@
+{
+  "name": "high-concurrency-inventory-order-processing-engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "start:outbox": "node src/workers/outbox-dispatcher.js",
+    "start:reservation-worker": "node src/workers/reservation-expiry.worker.js",
+    "start:order-worker": "node src/workers/order-processing.worker.js",
+    "test": "node --test test/unit/validators.test.js",
+    "test:integration": "node --test --test-concurrency=1 ./test/integration/inventory-concurrency.test.js ./test/integration/idempotency.test.js ./test/integration/idempotency-concurrency.test.js ./test/integration/order-processing.test.js ./test/integration/order-processing-concurrency.test.js ./test/integration/order-processing-failure.test.js ./test/integration/order-processing-recovery.test.js ./test/integration/bullmq-retry.test.js ./test/integration/bullmq-crash-recovery.test.js ./test/integration/order-worker-recovery.test.js ./test/integration/order-processing-post-effect-recovery.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "dependencies": {
+    "bullmq": "^6.3.15",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "ioredis": "^6.0.0",
+    "mongoose": "^9.11.2",
+    "redis": "^6.3.0",
+    "zod": "^4.6.7"
+  }
+}

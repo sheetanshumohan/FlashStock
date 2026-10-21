@@ -321,6 +321,43 @@ The unit tests cover request validation. Integration tests exercise the actual M
 
 The integration suite requires MongoDB and Redis to be available. It uses the dedicated `flashstock_test` database and creates temporary queue names for queue tests. Do not configure test runs against a database containing important application data.
 
+### Performance Testing
+
+FlashStock includes [k6](https://k6.io/) scripts to test API response correctness, latency, and behavior under concurrent load.
+
+**Test environment:** Local Windows development environment, Node.js API, MongoDB, Redis, and k6 v2.2.0. Results are from local runs and may vary with hardware, data, cache state, and configuration.
+
+#### Recorded Results
+
+| Metric | Product API Baseline | Product API Ramping Load |
+|---|---:|---:|
+| Test duration | 20 seconds | 35 seconds |
+| Virtual users | 5 | Ramped up to 10 |
+| Completed HTTP requests | 100 | 15,178 |
+| Observed throughput | 4.81 requests/sec | 433.64 requests/sec |
+| Average response time | 34.64 ms | 8.45 ms |
+| P95 response time | 139.94 ms | 13.21 ms |
+| Failed HTTP requests | 0% | 0% |
+| Response checks passed | 100% | 100% |
+| Configured thresholds | Passed | Passed |
+
+#### How to Run the Tests
+
+Run these commands from the `server` directory:
+
+```bash
+k6 run ./scripts/k6-products-baseline.js
+k6 run ./scripts/k6-products-load.js
+```
+
+The baseline test uses five virtual users for 20 seconds. The ramping test increases concurrency over multiple stages, reaching a configured maximum of ten virtual users.
+
+The tests validate HTTP status codes and product-list response structure, while enforcing thresholds for request failures and response latency.
+
+**Rate-limit considerations:** The baseline was run with the normal product-read limit of 120 requests per minute. The ramping benchmark was run with a temporary local limit of 100,000 requests per minute to reduce rate-limit interference during testing. The normal limit was restored to 120 after the benchmark. The elevated value is for local benchmarking only and is not a production recommendation.
+
+**Interpretation:** In these local runs, the product-list endpoint completed the tested requests without HTTP failures and met the configured latency and check-success thresholds. These results do not establish production capacity, sustained-load performance, or behavior under all failure scenarios.
+
 ### Verified test scenarios
 
 - 20 distinct reservation requests against 5 available units: 5 succeed and 15 receive insufficient-stock responses.
